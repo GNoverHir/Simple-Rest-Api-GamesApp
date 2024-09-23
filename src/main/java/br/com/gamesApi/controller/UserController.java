@@ -1,5 +1,6 @@
 package br.com.gamesApi.controller;
 
+import br.com.gamesApi.dto.LoginRequest;
 import br.com.gamesApi.dto.UserRequest;
 import br.com.gamesApi.dto.UserResponse;
 import br.com.gamesApi.model.User;
@@ -40,6 +41,24 @@ public class UserController {
         return new ResponseEntity<>(user.get(), HttpStatus.OK);
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody @Valid LoginRequest loginRequest) {
+        Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
+
+        if (userOptional.isEmpty()) {
+            return new ResponseEntity<>("Usuário não encontrado", HttpStatus.UNAUTHORIZED);
+        }
+
+        User user = userOptional.get();
+
+        if (!user.getSenha().equals(loginRequest.getSenha())) {
+            return new ResponseEntity<>("Senha incorreta", HttpStatus.UNAUTHORIZED);
+        }
+
+        UserResponse userResponse = userService.userResponse(user);
+        return new ResponseEntity<>(userResponse.toString(), HttpStatus.OK);
+    }
+
     @PutMapping("/{email}")
     public ResponseEntity<User> updatePartial(@PathVariable String email, @RequestBody User userAtualizado) {
         Optional<User> userOptional = userRepository.findByEmail(email);
@@ -47,7 +66,6 @@ public class UserController {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
 
-            // Atualizando apenas os atributos que foram passados
             if (userAtualizado.getUrl() != null) {
                 user.setUrl(userAtualizado.getUrl());
             }
